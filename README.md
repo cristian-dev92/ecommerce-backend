@@ -100,21 +100,19 @@ DELETE /api/products/{id}
 
   [x] CRUD de productos
 
-  [ ] Carrito de compras
+  [x] Carrito de compras con CRUD
 
-  [ ] Pasarela de pago
+  [ ] Pestaña Perfil de usuario
 
-  [ ] Panel de administración
+  [ ] Añadir roles
+ 
+  [ ] Mejorar la interfaz con fotos y un estilo de página sencillo
 
 ### 📌 Próximos pasos
-
-  Implementar carrito 
   
   Añadir roles (admin / user)
   
   Mejorar UI en Angular
-  
-  Añadir tests unitarios
 
 📄 Licencia
 
