@@ -45,7 +45,7 @@ spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
 
 spring.datasource.username=postgres
 
-spring.datasource.password=*******
+spring.datasource.password=postgres92
 
 spring.jpa.hibernate.ddl-auto=update
 
@@ -92,7 +92,7 @@ PUT /api/products/{id}
 
 DELETE /api/products/{id}
 
-### 🧪 Estado actual del proyecto
+### 🧪 Estado actual del proyecto - FINALIZADO
 
   [x] Backend inicial configurado
 
@@ -106,7 +106,7 @@ DELETE /api/products/{id}
  
   [X] Mejorar la interfaz con fotos y un estilo de página sencillo
 
-  [ ] Terminar con un historial de pedidos
+  [X] Terminar con un historial de pedidos
 
 📄 Licencia
 
