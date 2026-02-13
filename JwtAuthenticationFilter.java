@@ -39,7 +39,7 @@ import java.io.IOException;
         }
 
         // ⛔ EXCLUIR login y register del filtro
-        if (path.startsWith("/api/auth/") || path.startsWith("/api/products/")) {
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/register")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -66,7 +66,7 @@ import java.io.IOException;
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                principal.getUser(),// 👈 AHORA EL PRINCIPAL ES User
+                                principal.getUser(), // 👈 AHORA EL PRINCIPAL ES User
                                 null,
                                 userDetails.getAuthorities()
                         );

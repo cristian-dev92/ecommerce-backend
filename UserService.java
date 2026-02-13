@@ -50,7 +50,8 @@ public class UserService {
     }
 
     public void updateAddress(Long userId, UpdateAddressDto dto) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         Address address = user.getAddress();
         if(address == null) {

@@ -63,7 +63,8 @@ public class SecurityConfig {
                 // Configura la autorización de peticiones
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/**", // Permite acceso público a endpoints de autenticación
+                                "/api/auth/login", // Permite acceso público a login
+                                         "/api/auth/register", // Permite acceso público a registro
                                          "/api/products/**", // Permite acceso público a productos
                                          "/product-images/**", // Permite acceso a imágenes de productos
                                          "/uploads/**"  // Permite acceso a imágenes subidas
