@@ -45,7 +45,7 @@ spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
 
 spring.datasource.username=postgres
 
-spring.datasource.password=*******
+spring.datasource.password=postgres92
 
 spring.jpa.hibernate.ddl-auto=update
 
@@ -92,7 +92,7 @@ PUT /api/products/{id}
 
 DELETE /api/products/{id}
 
-### 🧪 Estado actual del proyecto
+### 🧪 Estado actual del proyecto - FINALIZADO
 
   [x] Backend inicial configurado
 
@@ -100,21 +100,13 @@ DELETE /api/products/{id}
 
   [x] CRUD de productos
 
-  [ ] Carrito de compras
+  [x] Carrito de compras con CRUD
 
-  [ ] Pasarela de pago
+  [x] Pestaña Perfil de usuario
+ 
+  [X] Mejorar la interfaz con fotos y un estilo de página sencillo
 
-  [ ] Panel de administración
-
-### 📌 Próximos pasos
-
-  Implementar carrito 
-  
-  Añadir roles (admin / user)
-  
-  Mejorar UI en Angular
-  
-  Añadir tests unitarios
+  [X] Terminar con un historial de pedidos
 
 📄 Licencia
 
