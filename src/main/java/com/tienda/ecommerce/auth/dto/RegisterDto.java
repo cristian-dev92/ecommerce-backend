@@ -9,13 +9,6 @@ import lombok.AllArgsConstructor;
  * Data Transfer Object (DTO) para manejar la solicitud de registro de usuarios.
  * Mapea los campos enviados desde el formulario de Angular.
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 
-public class RegisterRequest {
-    private String name;
-    private String email;
-    private String password;
-}
+public record RegisterDto(String name, String email, String password) {}
+

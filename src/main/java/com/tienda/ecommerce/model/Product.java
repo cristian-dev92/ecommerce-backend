@@ -19,6 +19,7 @@ public class Product {
     private String name;
     private String description;
     private BigDecimal price; // Usar BigDecimal para dinero, no float/double
+    private String imageUrl;
 
     // ... más campos como stock, url_imagen, etc.
 }

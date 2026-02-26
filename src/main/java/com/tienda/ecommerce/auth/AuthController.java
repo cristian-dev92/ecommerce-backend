@@ -1,66 +1,141 @@
 package com.tienda.ecommerce.auth;
 
-import com.tienda.ecommerce.auth.dto.LoginRequest;
-import com.tienda.ecommerce.auth.dto.RegisterRequest;
+import com.tienda.ecommerce.auth.dto.*;
+import com.tienda.ecommerce.model.Address;
 import com.tienda.ecommerce.model.User;
+import com.tienda.ecommerce.service.UserPrincipal;
+import com.tienda.ecommerce.service.UserService;
+import com.tienda.ecommerce.security.JwtService;
+import com.tienda.ecommerce.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Map;
+
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controlador REST para manejar las operaciones de autenticación (Registro e Inicio de Sesión).
  */
 @RestController
-@RequestMapping("/api/v1/auth")
-// Importante: Dejamos "*" temporalmente para descartar problemas de CORS durante las pruebas
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    @Autowired private UserService userService;
+    @Autowired private JwtService jwtService;
+    @Autowired private AuthenticationManager authenticationManager;
+    @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
 
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest request) {
-        Map<String, Object> response = new HashMap<>();
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginDto req) {
+
         try {
-            System.out.println("Recibida petición de registro para: " + request.getEmail());
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            req.email(),
+                            req.password()
+                    )
+            );
 
-            if (request.getName() == null || request.getEmail() == null || request.getPassword() == null) {
-                response.put("message", "Datos de registro incompletos");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
+            UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+            User user = principal.getUser();
+            String token = jwtService.generateToken(principal.getUser());
 
-            User user = authService.register(request);
+            return ResponseEntity.ok(new LoginResponseDto(token, user));
 
-            response.put("message", "Usuario registrado exitosamente");
-            response.put("userId", user.getId());
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-
-        } catch (Exception e) {
-            System.err.println("Error en registro: " + e.getMessage());
-            response.put("message", e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Email o contraseña incorrectos"));
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request) {
-        return authService.login(request)
-                .map(user -> {
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("message", "Inicio de sesión exitoso");
-                    response.put("name", user.getName());
-                    response.put("token", "simulated-jwt-token-for-" + user.getEmail());
-                    return ResponseEntity.ok(response);
-                })
-                .orElseGet(() -> {
-                    Map<String, Object> errorResponse = new HashMap<>();
-                    errorResponse.put("message", "Credenciales incorrectas");
-                    return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
-                });
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterDto req) {
+
+        if (userRepository.findByEmail(req.email()).isPresent()) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Email ya registrado"));
+        }
+
+        User user = new User();
+        user.setName(req.name());
+        user.setEmail(req.email());
+        user.setPassword(passwordEncoder.encode(req.password()));
+
+        // Dirección vacía inicializada
+        Address address = new Address();
+        address.setFullName("");
+        address.setStreet("");
+        address.setCity("");
+        address.setPostalCode("");
+        address.setCountry("");
+
+        user.setAddress(address);
+
+        userRepository.save(user);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of("message", "Usuario registrado exitosamente"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("update-name")
+    public ResponseEntity<?> updateName(@RequestBody UpdateNameDto dto,
+                                        @AuthenticationPrincipal User user) {
+        userService.updateName(user.getId(), dto.name());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-email")
+    public ResponseEntity<?> updateEmail(@RequestBody UpdateEmailDto dto,
+                                         @AuthenticationPrincipal User user) {
+        userService.updateEmail(user.getId(), dto.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-password")
+    public ResponseEntity<?> updatePassword(@RequestBody UpdatePasswordDto dto,
+                                            @AuthenticationPrincipal User user) {
+        userService.updatePassword(user.getId(), dto.currentPassword(), dto.newPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/update-address")
+    public ResponseEntity<?> updateAddress(@RequestBody UpdateAddressDto dto,
+                                           @AuthenticationPrincipal User user) {
+        userService.updateAddress(user.getId(), dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/upload-avatar")
+    public ResponseEntity<?> uploadAvatar(@RequestParam("avatar") MultipartFile file,
+                                          @AuthenticationPrincipal User user)
+    throws IOException {
+
+        String avatarUrl = userService.updateAvatar(user.getId(), file);
+        return ResponseEntity.ok().body( java.util.Map.of("avatarUrl", avatarUrl) );
+    }
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> deleteAccount(@AuthenticationPrincipal User user) {
+        userService.deleteAccount(user.getId());
+        return ResponseEntity.ok().build();
     }
 }
