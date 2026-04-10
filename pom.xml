@@ -109,6 +109,11 @@
      </annotationProcessorPaths>
     </configuration>
    </plugin>
+   <!-- AÑADIR PLUGIN PARA SUBIR A RENDER -->
+   <plugin>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-maven-plugin</artifactId>
+   </plugin>
   </plugins>
  </build>
 
