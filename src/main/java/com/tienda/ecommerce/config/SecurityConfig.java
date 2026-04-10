@@ -65,11 +65,16 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login", // Permite acceso público a login
                                          "/api/auth/register", // Permite acceso público a registro
-                                         "/api/products/**", // Permite acceso público a productos
-                                         "/product-images/**", // Permite acceso a imágenes de productos
-                                         "/uploads/**"  // Permite acceso a imágenes subidas
+                                         "/api/products", // Permite acceso público a productos
+                                         "/api/products/*"
                         ).permitAll()
-                        // Cualquier otra petición (como login) debe ser autenticada
+                        // Solo ADMIN puede modificar productos
+                        .requestMatchers(
+                                "/api/products/upload-image",
+                                "/api/products/**/image",
+                                "/api/products/**"
+                        ).hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)

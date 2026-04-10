@@ -2,6 +2,7 @@ package com.tienda.ecommerce.controller;
 
 import com.tienda.ecommerce.model.Product;
 import com.tienda.ecommerce.repository.ProductRepository;
+import com.tienda.ecommerce.service.ImageService;
 import com.tienda.ecommerce.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,8 @@ public class ProductController {
     private ProductRepository productRepository;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private ImageService imageService;
 
     // GET - Listar todos
     @GetMapping public List<Product> getAllProducts() {
@@ -57,23 +60,17 @@ public class ProductController {
         productRepository.deleteById(id);
     }
 
-    //SUBIR IMÁGENES DE PRODUCTOS
+    //SUBIR IMÁGENES DE PRODUCTOS CON CLOUDINARY
     @PostMapping("/upload-image")
     public ResponseEntity<?> uploadProductImage(
             @RequestParam("image") MultipartFile file
     ) throws IOException {
 
-        // Nombre único
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String url = imageService.uploadImage(file);
 
-        // Guardar archivo
-        Path path = Paths.get("product-images/" + fileName);
-        Files.write(path, file.getBytes());
-
-        // URL pública
-        String url = "http://localhost:8080/product-images/" + fileName;
         return ResponseEntity.ok(Map.of("imageUrl", url));
     }
+
     // ASIGNAR IMAGEN A PRODUCTO
     @PutMapping("/{id}/image") public ResponseEntity<?> setProductImageUrl(
             @PathVariable Long id,
