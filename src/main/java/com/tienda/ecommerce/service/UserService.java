@@ -69,15 +69,16 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public String updateAvatar(Long userId, MultipartFile file) throws IOException {
+    public String updateAvatar(Long userId, MultipartFile avatar) throws IOException {
 
 
         // 1. Obtener usuario
-        User user = userRepository.findById(userId) .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         // 2. Subir imagen a Cloudinary
         Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
+                avatar.getBytes(),
                 ObjectUtils.asMap(
                         "folder", "avatars",          // Carpeta opcional en Cloudinary
                         "public_id", "avatar_" + userId, // Nombre único

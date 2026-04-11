@@ -71,7 +71,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Avatar solo para usuarios autenticados
-                        .requestMatchers(HttpMethod.POST, "/api/auth/upload-avatar").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").authenticated()
 
                         // Solo ADMIN puede subir o modificar imágenes de productos
                         .requestMatchers(
