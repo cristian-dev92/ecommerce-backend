@@ -69,11 +69,16 @@ public class SecurityConfig {
                                          "/api/products", // Permite acceso público a la lista de productos
                                          "/api/products/*" // Permite acceso público a productos
                         ).permitAll()
+
+                        // Avatar solo para usuarios autenticados
+                        .requestMatchers(HttpMethod.POST, "/api/auth/upload-avatar").authenticated()
+
                         // Solo ADMIN puede subir o modificar imágenes de productos
                         .requestMatchers(
                                 "/api/products/upload-image",
                                 "/api/products/*/image"
                         ).hasRole("ADMIN")
+
                         // ADMIN (POST, PUT, DELETE)
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
