@@ -5,6 +5,7 @@ import com.tienda.ecommerce.model.User;
 import com.tienda.ecommerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,9 +28,9 @@ public class UserController {
     @PostMapping("/upload-avatar")
     public ResponseEntity<?> uploadAvatar(
             @RequestParam("avatar") MultipartFile file,
-            @AuthenticationPrincipal User user
+            Authentication authentication
     ) throws IOException {
-
+        User user = (User) authentication.getPrincipal();
         String avatarUrl = userService.updateAvatar(user.getId(), file);
         return ResponseEntity.ok(Map.of("avatarUrl", avatarUrl));
     }

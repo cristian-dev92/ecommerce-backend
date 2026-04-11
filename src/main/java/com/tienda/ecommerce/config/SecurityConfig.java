@@ -64,11 +64,12 @@ public class SecurityConfig {
                 // Configura la autorización de peticiones
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/auth/login", // Permite acceso público a login
-                                         "/api/auth/register",// Permite acceso público a registro
-                                         "/api/products", // Permite acceso público a la lista de productos
-                                         "/api/products/*" // Permite acceso público a productos
+                                         "/api/auth/login", // Permite acceso público a login
+                                         "/api/auth/register"// Permite acceso público a registro
                         ).permitAll()
+
+                        // Productos públicos (solo lectura)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
                         // Avatar solo para usuarios autenticados
                         .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").authenticated()
@@ -101,9 +102,9 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         // Permitir que el navegador exponga las cabeceras de respuesta
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setExposedHeaders(List.of("Authorization"));
-        configuration.setAllowCredentials(false);
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
