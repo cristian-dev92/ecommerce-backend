@@ -6,6 +6,7 @@ import com.tienda.ecommerce.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -64,16 +65,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login", // Permite acceso público a login
-                                         "/api/auth/register", // Permite acceso público a registro
-                                         "/api/products", // Permite acceso público a productos
-                                         "/api/products/*"
+                                         "/api/auth/register",// Permite acceso público a registro
+                                         "/api/products", // Permite acceso público a la lista de productos
+                                         "/api/products/*" // Permite acceso público a productos
                         ).permitAll()
-                        // Solo ADMIN puede modificar productos
+                        // Solo ADMIN puede subir o modificar imágenes de productos
                         .requestMatchers(
                                 "/api/products/upload-image",
-                                "/api/products/**/image",
-                                "/api/products/**"
+                                "/api/products/*/image"
                         ).hasRole("ADMIN")
+                        // ADMIN (POST, PUT, DELETE)
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )
