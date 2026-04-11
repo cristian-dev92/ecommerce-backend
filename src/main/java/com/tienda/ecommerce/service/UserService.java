@@ -1,5 +1,7 @@
 package com.tienda.ecommerce.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.tienda.ecommerce.auth.dto.UpdateAddressDto;
 import com.tienda.ecommerce.model.Address;
 import com.tienda.ecommerce.model.User;
@@ -10,9 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
 @Service
 public class UserService {
@@ -22,6 +22,9 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     public User findById(long id) {
         return userRepository.findById(id)
@@ -72,23 +75,28 @@ public class UserService {
         // 1. Obtener usuario
         User user = userRepository.findById(userId) .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // 2. Crear nombre único del archivo
-        String fileName = "avatar_" + userId + ".png";
+        // 2. Subir imagen a Cloudinary
+        Map uploadResult = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", "avatars",          // Carpeta opcional en Cloudinary
+                        "public_id", "avatar_" + userId, // Nombre único
+                        "overwrite", true              // Reemplaza si ya existe
+                )
+        );
 
-        // 3. Guardar archivo en carpeta /uploads
-        Path uploadPath = Paths.get("uploads/" + fileName); Files.write(uploadPath, file.getBytes());
+        // 3. Obtener URL segura
+        String url = uploadResult.get("secure_url").toString();
 
-        // 4. Crear URL pública
-        String url = "http://localhost:8080/uploads/" + fileName;
+        // 4. Guardar URL en BD
+        user.setAvatarUrl(url);
+        userRepository.save(user);
 
-        // 5. Guardar URL en BD
-        user.setAvatarUrl(url); userRepository.save(user);
-
-        // 6. Devolver URL al controlador
+        // 5. Devolver URL al controlador
         return url;
-}
+    }
 
     public void deleteAccount(Long userId) {
         userRepository.deleteById(userId);
     }
-}
+    }
