@@ -33,6 +33,8 @@ public class AuthService {
         // IMPORTANTE: Aquí se debería encriptar la contraseña
         user.setPassword(request.password());
 
+        user.setRole("ROLE_USER"); // Rol por defecto
+
         return userRepository.save(user);
     }
 

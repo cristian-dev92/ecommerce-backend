@@ -48,9 +48,10 @@ public class AuthController {
                     )
             );
 
-            UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-            User user = principal.getUser();
-            String token = jwtService.generateToken(principal.getUser());
+            // 👇 AHORA EL PRINCIPAL ES UN User DIRECTAMENTE
+            User user = (User) authentication.getPrincipal();
+
+            String token = jwtService.generateToken(user);
 
             return ResponseEntity.ok(new LoginResponseDto(token, user));
 
