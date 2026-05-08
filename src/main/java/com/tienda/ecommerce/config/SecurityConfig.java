@@ -64,6 +64,7 @@ public class SecurityConfig {
                 // Configura la autorización de peticiones
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                        "/api/auth/**", // Permite acceso público a todas las rutas de auth (login, register, etc.)
                                          "/api/auth/login", // Permite acceso público a login
                                          "/api/auth/register"// Permite acceso público a registro
                         ).permitAll()
