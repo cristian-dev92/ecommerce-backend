@@ -40,7 +40,7 @@ Backend
 
     Gestión de Dependencias: Maven
 
-    Base de Datos: PostgreSQL
+    Base de Datos: PostgreSQL hospedado en Neon.tech (Persistencia real).
 
 Frontend
 
@@ -126,6 +126,11 @@ Este backend está optimizado para ser desplegado en:
 
 Nota: Al desplegar en producción, asegúrate de cambiar spring.jpa.hibernate.ddl-auto a validate o none para proteger la integridad de los datos.
 
+## 🗄️ Persistencia de Datos
+
+El proyecto utiliza Neon como proveedor de base de datos PostgreSQL serverless. 
+Esto permite que los productos y usuarios creados se mantengan almacenados de forma permanente, permitiendo una gestión de inventario real y segura.
+
 ## 🧪 Estado actual del proyecto - FINALIZADO
 
   [x] Backend inicial configurado
@@ -141,6 +146,8 @@ Nota: Al desplegar en producción, asegúrate de cambiar spring.jpa.hibernate.dd
   [X] Gestión de imágenes con Cloudinary implementada.
 
   [X] Interfaz de usuario mejorada con estilos CSS.
+
+  [X] Cambiar de una base de datos a otra con mas persistencia.
 
 ### 📄 Licencia
 
