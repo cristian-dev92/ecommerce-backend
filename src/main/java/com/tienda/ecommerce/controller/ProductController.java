@@ -1,68 +1,128 @@
 package com.tienda.ecommerce.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tienda.ecommerce.dto.ProductDetailDto;
+import com.tienda.ecommerce.dto.ProductHomeDto;
 import com.tienda.ecommerce.model.Product;
-import com.tienda.ecommerce.repository.ProductRepository;
-import com.tienda.ecommerce.service.ImageService;
 import com.tienda.ecommerce.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/products") // La URL base para todos los endpoints de productos
-@CrossOrigin(origins = "*", allowedHeaders = "*") // Permite Angular
+@RequestMapping("/api/products")
+@CrossOrigin(origins = "*", allowedHeaders = "*") // Crucial para que Angular no dé errores de CORS
 public class ProductController {
 
     @Autowired
-    private ProductRepository productRepository;
-    @Autowired
     private ProductService productService;
-    @Autowired
-    private ImageService imageService;
 
-    // GET - Listar todos
+    // ==========================================
+    // ENDPOINTS PÚBLICOS (Para Clientes en Angular)
+    // ==========================================
+
+    /**
+     * Lista todos los productos visibles paginados.
+     * URL en Angular: /api/products?page=0&size=10
+     */
     @GetMapping
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public ResponseEntity<Page<ProductHomeDto>> getAllVisible(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(productService.findAllVisible(pageable));
     }
 
-    // GET - Obtener por ID
+    /**
+     * Filtra productos visibles por categoría de forma paginada.
+     */
+    @GetMapping("/category/{category}")
+    public ResponseEntity<Page<ProductHomeDto>> getByCategory(
+            @PathVariable String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(productService.findByCategory(category, pageable));
+    }
+
+    /**
+     * El Súper-Filtro lateral de Angular.
+     * Permite encadenar búsquedas por texto, categoría, marcas múltiples y precio máximo.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductHomeDto>> searchAndFilter(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> brands,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+        return ResponseEntity.ok(productService.searchAndFilter(query, category, brands, maxPrice));
+    }
+
+    /**
+     * Devuelve los productos destacados en oferta.
+     */
+    @GetMapping("/offers")
+    public ResponseEntity<List<ProductHomeDto>> getOffers() {
+        return ResponseEntity.ok(productService.getActiveOffers());
+    }
+
+    /**
+     * Detalle de un producto por ID.
+     */
     @GetMapping("/{id}")
-    public Optional<Product> getProductById(
-            @PathVariable Long id) {
-        return productRepository.findById(id);
+    public ResponseEntity<ProductDetailDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.findDtoById(id));
     }
 
-    //POST - Cambiamos la ruta para que coincida con Angular y aceptamos Multipart
+    // ==========================================
+    // ENDPOINTS PRIVADOS (Para el Panel Admin de Angular)
+    // ==========================================
+
+    /**
+     * Crear un nuevo producto.
+     */
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        // Como ya viene la imageUrl en el JSON, solo guardamos
-        Product savedProduct = productRepository.save(product);
-        return ResponseEntity.ok(savedProduct);
+    public ResponseEntity<Product> create(@RequestBody Product product) {
+        Product savedProduct = productService.save(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
     }
 
-    // PUT - Actualizar producto
+    /**
+     * Modificar un producto existente.
+     */
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable Long id,
-                                 @RequestBody Product product) {
-        product.setId(id);
-        return productRepository.save(product);
+    public ResponseEntity<Product> update(@PathVariable Long id, @RequestBody Product product) {
+        return ResponseEntity.ok(productService.update(id, product));
     }
 
-    // DELETE - Eliminar producto
+    /**
+     * Eliminar un producto físicamente de la base de datos.
+     */
     @DeleteMapping("/{id}")
-    public void deleteProduct(@PathVariable Long id) {
-        productRepository.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        productService.deleteById(id);
+        return ResponseEntity.noContent().build(); // Devuelve un estado 204 sin cuerpo
+    }
+
+    /**
+     * Endpoint independiente para subir imágenes a Cloudinary desde el Panel Admin.
+     * Angular enviará el archivo aquí, recibirá la URL de Cloudinary y la meterá en el objeto Product.
+     */
+    @PostMapping("/upload-image")
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = productService.uploadImage(file);
+            return ResponseEntity.ok().body(java.util.Map.of("url", url));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", "Error al subir imagen: " + e.getMessage()));
+        }
     }
 }

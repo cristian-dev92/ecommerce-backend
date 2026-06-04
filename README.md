@@ -131,7 +131,7 @@ Nota: Al desplegar en producción, asegúrate de cambiar spring.jpa.hibernate.dd
 El proyecto utiliza Neon como proveedor de base de datos PostgreSQL serverless. 
 Esto permite que los productos y usuarios creados se mantengan almacenados de forma permanente, permitiendo una gestión de inventario real y segura.
 
-## 🧪 Estado actual del proyecto - FINALIZADO
+## 🧪 Estado actual del proyecto - REDISEÑO
 
   [x] Backend inicial configurado
 
@@ -148,6 +148,10 @@ Esto permite que los productos y usuarios creados se mantengan almacenados de fo
   [X] Interfaz de usuario mejorada con estilos CSS.
 
   [X] Cambiar de una base de datos a otra con mas persistencia.
+
+  [ ] Refactorización del código y mejoras de rendimiento.
+
+  [ ] Escalabilidad.
 
 ### 📄 Licencia
 

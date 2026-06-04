@@ -1,8 +1,9 @@
-package com.tienda.ecommerce.auth.dto;
+package com.tienda.ecommerce.dto;
 
 public record UpdateAddressDto(
-        String street,
+        String address,
         String city,
         String postalCode,
+        String province,
         String country
 ) {}

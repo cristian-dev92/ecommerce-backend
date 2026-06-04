@@ -1,34 +1,31 @@
 package com.tienda.ecommerce.auth;
 
-import com.tienda.ecommerce.auth.dto.*;
-import com.tienda.ecommerce.model.Address;
+import com.tienda.ecommerce.dto.LoginDto;
+import com.tienda.ecommerce.dto.LoginResponseDto;
+import com.tienda.ecommerce.dto.RegisterDto;
 import com.tienda.ecommerce.model.User;
-import com.tienda.ecommerce.service.UserPrincipal;
+import com.tienda.ecommerce.model.UserRole;
+import com.tienda.ecommerce.repository.UserRepository;
 import com.tienda.ecommerce.service.UserService;
 import com.tienda.ecommerce.security.JwtService;
-import com.tienda.ecommerce.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 
-import org.springframework.web.multipart.MultipartFile;
-
-/**
- * Controlador REST para manejar las operaciones de autenticación (Registro e Inicio de Sesión).
- */
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*", allowedHeaders = "*") // Clave para la conexión con Angular
 public class AuthController {
 
     @Autowired private UserService userService;
@@ -37,23 +34,22 @@ public class AuthController {
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
+    /**
+     * Endpoint público para iniciar sesión.
+     * Autentica contra Spring Security, genera el JWT y devuelve los datos seguros del usuario.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto req) {
-
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            req.email(),
-                            req.password()
-                    )
+                    new UsernamePasswordAuthenticationToken(req.email(), req.password())
             );
 
-            // 👇 AHORA EL PRINCIPAL ES UN User DIRECTAMENTE
             User user = (User) authentication.getPrincipal();
-
             String token = jwtService.generateToken(user);
 
-            return ResponseEntity.ok(new LoginResponseDto(token, user));
+            // Devolvemos el token y el usuario transformado a DTO seguro sin password
+            return ResponseEntity.ok(new LoginResponseDto(token, userService.mapToDto(user)));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -61,82 +57,34 @@ public class AuthController {
         }
     }
 
+    /**
+     * Endpoint público para crear nuevas cuentas desde Angular.
+     * Encripta la contraseña y asigna el rol de cliente por defecto.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterDto req) {
-
-        if (userRepository.findByEmail(req.email()).isPresent()) {
+        if (userRepository.existsByEmail(req.email())) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", "Email ya registrado"));
+                    .body(Map.of("error", "El email ya está registrado"));
         }
 
-        User user = new User();
-        user.setName(req.name());
-        user.setEmail(req.email());
-        user.setPassword(passwordEncoder.encode(req.password()));
+        // Construimos el nuevo usuario con el patrón Builder acoplado a Neon
+        User newUser = User.builder()
+                .name(req.name())
+                .surname(req.surname())
+                .email(req.email())
+                .password(passwordEncoder.encode(req.password()))
+                .roles(Set.of(UserRole.ROLE_USER)) // Asignamos el enum dinámico por defecto
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .isActive(true)
+                .build();
 
-        // Dirección vacía inicializada
-        Address address = new Address();
-        address.setFullName("");
-        address.setStreet("");
-        address.setCity("");
-        address.setPostalCode("");
-        address.setCountry("");
-
-        user.setAddress(address);
-
-        userRepository.save(user);
+        userRepository.save(newUser);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("message", "Usuario registrado exitosamente"));
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getMe(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(user);
-    }
-
-    @PutMapping("update-name")
-    public ResponseEntity<?> updateName(@RequestBody UpdateNameDto dto,
-                                        @AuthenticationPrincipal User user) {
-        userService.updateName(user.getId(), dto.name());
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/update-email")
-    public ResponseEntity<?> updateEmail(@RequestBody UpdateEmailDto dto,
-                                         @AuthenticationPrincipal User user) {
-        userService.updateEmail(user.getId(), dto.email());
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/update-password")
-    public ResponseEntity<?> updatePassword(@RequestBody UpdatePasswordDto dto,
-                                            @AuthenticationPrincipal User user) {
-        userService.updatePassword(user.getId(), dto.currentPassword(), dto.newPassword());
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/update-address")
-    public ResponseEntity<?> updateAddress(@RequestBody UpdateAddressDto dto,
-                                           @AuthenticationPrincipal User user) {
-        userService.updateAddress(user.getId(), dto);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/upload-avatar")
-    public ResponseEntity<?> uploadAvatar(@RequestParam("avatar") MultipartFile file,
-                                          @AuthenticationPrincipal User user)
-    throws IOException {
-
-        String avatarUrl = userService.updateAvatar(user.getId(), file);
-        return ResponseEntity.ok().body( java.util.Map.of("avatarUrl", avatarUrl) );
-    }
-
-    @DeleteMapping("/delete-account")
-    public ResponseEntity<?> deleteAccount(@AuthenticationPrincipal User user) {
-        userService.deleteAccount(user.getId());
-        return ResponseEntity.ok().build();
     }
 }

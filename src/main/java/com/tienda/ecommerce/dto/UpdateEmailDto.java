@@ -1,4 +1,4 @@
-package com.tienda.ecommerce.auth.dto;
+package com.tienda.ecommerce.dto;
 
 
 public record UpdateEmailDto(String email) {}

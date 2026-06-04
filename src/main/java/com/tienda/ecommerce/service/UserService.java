@@ -1,21 +1,22 @@
 package com.tienda.ecommerce.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.tienda.ecommerce.auth.dto.UpdateAddressDto;
-import com.tienda.ecommerce.model.Address;
+import com.tienda.ecommerce.dto.UpdateAddressDto;
+import com.tienda.ecommerce.dto.UserDto;
 import com.tienda.ecommerce.model.User;
 import com.tienda.ecommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
@@ -23,81 +24,98 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private Cloudinary cloudinary;
+    /**
+     * Método VITAL para Spring Security.
+     * Permite buscar al usuario en Neon por su email durante el proceso de Login.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con el email: " + email));
+    }
 
-    public User findById(long id) {
+    public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
-    public void updateName(Long userId, String newName) {
-        User user = findById(userId); user.setName(newName);
+    @Transactional
+    public void updateName(Long userId, String newName, String newSurname) {
+        User user = findById(userId);
+        user.setName(newName);
+        user.setSurname(newSurname);
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setSurname(newSurname);
         userRepository.save(user);
     }
 
+    @Transactional
     public void updateEmail(Long userId, String newEmail) {
-        User user = findById(userId); user.setEmail(newEmail);
+        User user = findById(userId);
+        // Evitamos que cambie su correo a uno que ya use otra persona
+        if (!user.getEmail().equals(newEmail) && userRepository.existsByEmail(newEmail)) {
+            throw new RuntimeException("El email ya está registrado por otro usuario");
+        }
+        user.setEmail(newEmail);
+        user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
+    @Transactional
     public void updatePassword(Long userId, String currentPassword, String newPassword) {
         User user = findById(userId);
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new RuntimeException("Contraseña actual incorrecta");
+            throw new RuntimeException("La contraseña actual es incorrecta");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
     }
 
+    @Transactional
     public void updateAddress(Long userId, UpdateAddressDto dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        User user = findById(userId);
 
-        Address address = user.getAddress();
-        if(address == null) {
-            address = new Address();
-            user.setAddress(address);
-        }
+        // Mapeamos los campos planos directamente a la entidad unificada
+        user.setAddress(dto.address());
+        user.setCity(dto.city());
+        user.setPostalCode(dto.postalCode());
+        user.setProvince(dto.province());
+        user.setCountry(dto.country());
+        user.setUpdatedAt(LocalDateTime.now());
 
-        address.setStreet(dto.street());
-        address.setCity(dto.city());
-        address.setPostalCode(dto.postalCode());
-        address.setCountry(dto.country());
         userRepository.save(user);
     }
 
-    public String updateAvatar(Long userId, MultipartFile avatar) throws IOException {
-
-
-        // 1. Obtener usuario
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // 2. Subir imagen a Cloudinary
-        Map uploadResult = cloudinary.uploader().upload(
-                avatar.getBytes(),
-                ObjectUtils.asMap(
-                        "folder", "avatars",          // Carpeta opcional en Cloudinary
-                        "public_id", "avatar_" + userId, // Nombre único
-                        "overwrite", true              // Reemplaza si ya existe
-                )
-        );
-
-        // 3. Obtener URL segura
-        String url = uploadResult.get("secure_url").toString();
-
-        // 4. Guardar URL en BD
-        user.setAvatarUrl(url);
+    @Transactional
+    public String updateAvatar(Long userId, String avatarUrl) {
+        User user = findById(userId);
+        user.setAvatarUrl(avatarUrl);
+        user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-
-        // 5. Devolver URL al controlador
-        return url;
+        return avatarUrl;
     }
 
+    @Transactional
     public void deleteAccount(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("Usuario no encontrado");
+        }
         userRepository.deleteById(userId);
     }
+
+    // Helper para transformar la entidad User en un DTO seguro para Angular
+    public UserDto mapToDto(User user) {
+        return new UserDto(
+                user.getId(),
+                user.getName(),
+                user.getSurname(),
+                user.getEmail(),
+                user.getAvatarUrl(),
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())
+        );
     }
+}

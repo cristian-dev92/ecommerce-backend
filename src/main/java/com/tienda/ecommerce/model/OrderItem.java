@@ -2,14 +2,14 @@ package com.tienda.ecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
-
-@Setter
-@Getter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -18,19 +18,29 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long productId;
-
-    private String productName;
-
-    private double price;
-
+    @Column(nullable = false)
     private int quantity;
 
-    private double subtotal;
+    @Column(nullable = false)
+    private BigDecimal price; // Precio unitario congelado en el momento del pago
 
+    // Relación con el producto comprado
     @ManyToOne
-    @JoinColumn(name = "order_id")
-    @JsonIgnore // 👈 ESTO ROMPE LA RECURSIÓN
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    // Relación hacia atrás con el pedido padre (Evitando bucles con @JsonIgnore)
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnore
     private Order order;
 
+    /**
+     * Lógica de Dominio.
+     * Calcula dinámicamente el subtotal de esta línea (Precio congelado * cantidad).
+     */
+    public BigDecimal getSubtotal() {
+        if (this.price == null) return BigDecimal.ZERO;
+        return this.price.multiply(BigDecimal.valueOf(this.quantity));
+    }
 }

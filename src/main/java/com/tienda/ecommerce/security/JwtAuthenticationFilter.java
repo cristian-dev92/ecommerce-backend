@@ -1,8 +1,6 @@
 package com.tienda.ecommerce.security;
 
-import com.tienda.ecommerce.model.User;
-import com.tienda.ecommerce.service.CustomUserDetailsService;
-import com.tienda.ecommerce.service.UserPrincipal;
+import com.tienda.ecommerce.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,20 +10,23 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Component public class JwtAuthenticationFilter extends OncePerRequestFilter {
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtService jwtService;
 
     @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private UserService userService; // El único y verdadero gestor de usuarios
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,14 +36,14 @@ import java.util.List;
 
         String path = request.getServletPath();
 
-        // Excluir OPTIONS (CORS preflight)
+        // Evitar inspección en peticiones preflight de Angular (CORS)
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ⛔ EXCLUIR login y register del filtro
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/register")) {
+        // Permitir acceso directo a endpoints públicos sin buscar token
+        if (path.startsWith("/api/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -59,31 +60,32 @@ import java.util.List;
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            var userDetails = userDetailsService.loadUserByUsername(email);
+            // Buscamos en Neon usando la infraestructura de Spring Security implementada en UserService
+            UserDetails userDetails = userService.loadUserByUsername(email);
 
-            User user = (User) userDetails;
+            if (jwtService.isTokenValid(token, userDetails)) {
 
-            if (jwtService.isTokenValid(token, user)) {
-
-                String roleClaim = jwtService.extractRole(token);
+                // Extraemos la colección de roles empaquetados en el JWT
+                List<String> rolesClaim = jwtService.extractRoles(token);
                 Collection<? extends GrantedAuthority> authorities;
-                if (roleClaim != null && !roleClaim.isBlank()) {
-                    authorities = List.of(new SimpleGrantedAuthority(roleClaim));
+
+                if (rolesClaim != null && !rolesClaim.isEmpty()) {
+                    authorities = rolesClaim.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
                 } else {
                     authorities = userDetails.getAuthorities();
                 }
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                authorities
-                        );
-
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        authorities
                 );
 
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Establecemos la sesión en el contexto para que @AuthenticationPrincipal funcione
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

@@ -1,41 +1,32 @@
 package com.tienda.ecommerce.service;
 
+import com.tienda.ecommerce.dto.ProductDetailDto;
+import com.tienda.ecommerce.dto.ProductHomeDto;
 import com.tienda.ecommerce.model.Product;
-import com.tienda.ecommerce.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.math.BigDecimal;
+import java.util.List;
 
-@Service
-public class ProductService {
+public interface ProductService {
 
+    // Métodos públicos para la tienda en Angular (Usa DTOs protegidos y ligeros)
+    Page<ProductHomeDto> findAllVisible(Pageable pageable);
+    Page<ProductHomeDto> findByCategory(String category, Pageable pageable);
+    List<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice);
+    List<ProductHomeDto> getActiveOffers();
+    ProductDetailDto findDtoById(Long id);
 
-    @Autowired
-    private ProductRepository productRepository;
+    // Métodos de Administración (CRUD Completo)
+    List<Product> findAll();
+    Product findById(Long id);
+    Product save(Product product);
+    Product update(Long id, Product updatedProduct);
+    void deleteById(Long id);
 
-    public String uploadProductImage(MultipartFile file) throws IOException {
-
-        // Nombre único
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-
-        // Guardar archivo en carpeta product-images/
-        Path path = Paths.get("product-images/" + fileName);
-        Files.write(path, file.getBytes());
-
-        // URL pública
-        return "http://localhost:8080/product-images/" + fileName;
-    }
-
-    public Product updateProductImage(Long productId, String image) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-
-        product.setImageUrl(product.getImageUrl());
-        return productRepository.save(product);
-    }
+    // Gestión de Imágenes con Cloudinary
+    String uploadImage(MultipartFile file) throws IOException;
 }
