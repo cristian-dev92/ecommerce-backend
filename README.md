@@ -34,6 +34,8 @@ Backend
 
     Core: Java 21 & Spring Boot 3.4.1
 
+    Procesamiento por lotes: Spring Batch & @Scheduled (Cron Jobs nocturnos)
+
     Seguridad: Spring Security
 
     Persistencia: Spring Data JPA + Hibernate
@@ -56,13 +58,13 @@ Frontend
 
 /backend/src/main/java/com/tienda/ecommerce/
 
-├—— auth # Lógica específica de login y registro. 
- 
-└—— dto # Objetos de transferencia de datos (evitan exponer entidades directamente).
+├—— auth # Lógica específica de login y registro.
 
 ├—— config # Configuraciones generales (CORS, Beans, etc.).
 
 ├—— controller # Endpoints de la API REST que reciben las peticiones.
+
+├——  dto # Objetos de transferencia de datos (evitan exponer entidades directamente).
 
 ├—— model # Entidades JPA que representan las tablas en PostgreSQL.
 
@@ -83,8 +85,8 @@ En `src/main/resources/application.properties`:
 Properties
 
     spring.datasource.url=jdbc:postgresql://localhost:5432/tienda_db
-    spring.datasource.username=postgres
-    spring.datasource.password=postgre92
+    spring.datasource.username=tu_usuario
+    spring.datasource.password=tu_contraseña
     spring.jpa.hibernate.ddl-auto=update
 
 ### 2. Gestión de Imágenes (Cloudinary)
@@ -115,6 +117,7 @@ El backend quedará disponible en: http://localhost:8080
 | Productos | GET | /api/products | Listar productos |
 | Productos | POST | /api/products | Crear (Requiere Cloudinary) |
 | Usuarios | GET | /api/users | Listar usuarios (Admin) |
+| Pedidos | GET | /api/orders/{id}/pdf | Descargar factura (PDF generado en caliente) |
 
 ## 🚀 Despliegue
 
@@ -133,6 +136,10 @@ Esto permite que los productos y usuarios creados se mantengan almacenados de fo
 
 ## 🧪 Estado actual del proyecto - REDISEÑO
 
+  El proyecto nació como un MVP (Producto Mínimo Viable) funcional en su primera version y actualmente se encuentra en su tercera version de rediseño arquitectónico y robustez empresarial.
+
+  VERSION 1: MVP funcional con persistencia en memoria (H2) y sin gestión de imágenes.
+
   [x] Backend inicial configurado
 
   [x] Configuración de Spring Security finalizada
@@ -143,15 +150,29 @@ Esto permite que los productos y usuarios creados se mantengan almacenados de fo
 
   [x] Pestaña Perfil e Historial de pedidos.
 
+  VERSION 2: Rediseño con persistencia real en PostgreSQL y mejoras de seguridad.
+
   [X] Gestión de imágenes con Cloudinary implementada.
 
   [X] Interfaz de usuario mejorada con estilos CSS.
 
-  [X] Cambiar de una base de datos a otra con mas persistencia.
+  [X] Migración a PostgreSQL desde Render a Neon.tech.
 
-  [ ] Refactorización del código y mejoras de rendimiento.
+  VERSION 3: Mejoras de Arquitectura e Infraestructura.
 
-  [ ] Escalabilidad.
+  [X] Refactorización del código y mejoras de rendimiento.
+
+  [X] Migración Financiera: Transición total de tipos de datos flotantes a `BigDecimal` para garantizar precisión milimétrica en los cálculos.
+
+  [X] Módulo de Facturación Automatizada: Integración del motor Flying Saucer para la generación e inyección dinámica de PDFs de facturas en base a las compras del usuario.
+
+  [X] Integridad de Ventas: Uso de transacciones de base de datos para asegurar que, si algo falla durante la compra, el stock y los pedidos siempre se mantengan sincronizados y sin errores.
+
+  [X] Módulo de Contabilidad en Segundo Plano (Spring Batch): Configuración de tareas programadas (`@Scheduled`) de trastienda para el control automático de inventario, auditoría de stock crítico y reportes automáticos.
+
+  [X] Seguridad de Credenciales: Migración de credenciales de desarrollo hacia perfiles locales protegidos (`application-dev.properties`) inyectados por variables de entorno.
+
+  [X] Escalabilidad.
 
 ### 📄 Licencia
 
