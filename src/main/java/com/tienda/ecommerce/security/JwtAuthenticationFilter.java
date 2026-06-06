@@ -49,6 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String authHeader = request.getHeader("Authorization");
+        System.out.println("[FILTRO JWT] Cabecera recibida: " + authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -57,16 +58,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
         String email = jwtService.extractEmail(token);
+        System.out.println("[FILTRO JWT] Email extraído del token: " + email);
 
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             // Buscamos en Neon usando la infraestructura de Spring Security implementada en UserService
             UserDetails userDetails = userService.loadUserByUsername(email);
+            System.out.println("[FILTRO JWT] Usuario encontrado en Neon: " + userDetails.getUsername());
 
             if (jwtService.isTokenValid(token, userDetails)) {
 
+                System.out.println("[FILTRO JWT]  ¡El token es VÁLIDO! Entrando a mapear roles...");
                 // Extraemos la colección de roles empaquetados en el JWT
                 List<String> rolesClaim = jwtService.extractRoles(token);
+                System.out.println("[FILTRO JWT] Roles extraídos del Claim: " + rolesClaim);
                 Collection<? extends GrantedAuthority> authorities;
 
                 if (rolesClaim != null && !rolesClaim.isEmpty()) {
@@ -87,9 +92,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Establecemos la sesión en el contexto para que @AuthenticationPrincipal funcione
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                System.out.println("[FILTRO JWT] 🛡️ Usuario autenticado con éxito en el contexto de Spring.");
             }
         }
-
+        System.out.println("[FILTRO JWT] ❌ El token fue RECHAZADO por jwtService.isTokenValid()");
         filterChain.doFilter(request, response);
     }
 }

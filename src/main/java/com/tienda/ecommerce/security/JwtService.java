@@ -45,12 +45,13 @@ public class JwtService {
     }
 
     public String extractEmail(String token) {
+
         return extractClaim(token, Claims::getSubject);
     }
 
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
-        return extractClaim(token, claims -> claims.get("roles", List.class));
+        return extractClaim(token, claims -> (List<String>) claims.get("roles"));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -67,8 +68,16 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, org.springframework.security.core.userdetails.UserDetails userDetails) {
-        final String email = extractEmail(token);
-        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        try {
+            final String email = extractEmail(token);
+            boolean emailCoincide = email.equals(userDetails.getUsername());
+            boolean tokenNoExpirado = !isTokenExpired(token);
+
+            return (emailCoincide && tokenNoExpirado);
+        } catch (Exception e) {
+            System.out.println("[JWT SERVICE] ❌ Error validando token (Firma corrupta, clave cambiada o expirado): " + e.getMessage());
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {
