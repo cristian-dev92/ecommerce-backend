@@ -72,10 +72,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").authenticated()
 
                         // Gestión exclusiva de Administradores para el catálogo
-                        .requestMatchers("/api/products/upload-image", "/api/products/*/image").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers("/api/products/*/upload").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/products", "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products", "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products", "/api/products/**").hasRole("ADMIN")
 
                         // Cualquier otra ruta (como procesar pedidos) requiere estar logueado
                         .anyRequest().authenticated()
