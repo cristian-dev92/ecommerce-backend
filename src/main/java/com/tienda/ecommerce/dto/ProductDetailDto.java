@@ -14,5 +14,7 @@ public record ProductDetailDto(
         BigDecimal discount,
         BigDecimal finalPrice,
         String imageUrl,
-        List<String> gallery
+        List<String> gallery,
+        int stock,
+        BigDecimal taxes
 ) {}

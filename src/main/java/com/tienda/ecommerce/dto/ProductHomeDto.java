@@ -9,5 +9,6 @@ public record ProductHomeDto(
         BigDecimal price,       // Precio base
         BigDecimal discount,    // Descuento
         BigDecimal finalPrice,   // PVP calculado
-        String imageUrl
+        String imageUrl,
+        int stock
 ) {}

@@ -32,21 +32,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<ProductHomeDto> findAllVisible(Pageable pageable) {
         return productRepository.findByVisibleTrue(pageable)
-                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl()));
+                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()));
     }
 
     @Override
     public Page<ProductHomeDto> findByCategory(String category, Pageable pageable) {
         return productRepository.findByCategoryAndVisibleTrue(category, pageable)
-                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl()));
+                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()));
     }
 
     @Override
     public List<ProductHomeDto> getActiveOffers() {
         return productRepository.findByDiscountGreaterThanAndVisibleTrue(BigDecimal.ZERO).stream()
-                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl()))
-                .collect(Collectors.toList());
-    }
+                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()))
+            .collect(Collectors.toList());
+}
 
     /**
      * Motor de búsqueda y filtrado de productos dinámico.
@@ -80,14 +80,14 @@ public class ProductServiceImpl implements ProductService {
 
         // Convertimos la lista filtrada de entidades a DTOs para Angular
         return products.stream()
-                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl()))
+                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()))
                 .collect(Collectors.toList());
-    }
 
+}
     @Override
     public ProductDetailDto findDtoById(Long id) {
         Product p = findById(id); // Reutiliza el buscador que lanza la excepción si no existe
-        return new ProductDetailDto(p.getId(), p.getName(), p.getBrand(), p.getDescription(), p.getTechnicalDescription(), p.getCategory(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getGallery());
+        return new ProductDetailDto(p.getId(), p.getName(), p.getBrand(), p.getDescription(), p.getTechnicalDescription(), p.getCategory(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getGallery(), p.getStock(), p.getTaxes());
     }
 
     @Override
