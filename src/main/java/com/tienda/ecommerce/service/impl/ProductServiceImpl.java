@@ -87,7 +87,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDetailDto findDtoById(Long id) {
         Product p = findById(id); // Reutiliza el buscador que lanza la excepción si no existe
-        return new ProductDetailDto(p.getId(), p.getName(), p.getBrand(), p.getDescription(), p.getTechnicalDescription(), p.getCategory(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getGallery(), p.getStock(), p.getTaxes());
+        return new ProductDetailDto(
+                p.getId(), p.getName(), p.getBrand(), p.getDescription(),
+                p.getTechnicalDescription(), p.getCategory(), p.getPrice(), p.getDiscount(), p.getFinalPrice(),
+                p.getImageUrl(), p.getGallery(), p.getStock(), p.getTaxes(),
+                p.getManufacturer(), p.getWarranty());
     }
 
     @Override

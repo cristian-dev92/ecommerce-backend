@@ -16,5 +16,7 @@ public record ProductDetailDto(
         String imageUrl,
         List<String> gallery,
         int stock,
-        BigDecimal taxes
+        BigDecimal taxes,
+        String manufacturer,
+        String warranty
 ) {}

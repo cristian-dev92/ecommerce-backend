@@ -66,7 +66,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Productos públicos (cualquiera puede ver el catálogo)
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/offers").permitAll()
 
                         // Panel de usuario (subir avatar, ver perfil, etc.) requieren login
                         .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").authenticated()

@@ -49,6 +49,7 @@ public class Product {
     @Column(nullable = false)
     private BigDecimal taxes; // Porcentaje de impuestos (Ej: 21.00 para España)
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean visible = true;
 
@@ -57,6 +58,12 @@ public class Product {
 
     @Column(name = "image_url")
     private String imageUrl; // URL de la imagen principal (Cloudinary)
+
+    @Column(name = "manufacturer")
+    private String manufacturer;
+
+    @Column(name = "warranty")
+    private String warranty;
 
     // Colección incrustada para la galería de imágenes adicionales
     @ElementCollection
