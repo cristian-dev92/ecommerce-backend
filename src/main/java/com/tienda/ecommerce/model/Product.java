@@ -66,7 +66,7 @@ public class Product {
     private String warranty;
 
     // Colección incrustada para la galería de imágenes adicionales
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_gallery", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_url")
     @Builder.Default

@@ -64,11 +64,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // Buscamos en Neon usando la infraestructura de Spring Security implementada en UserService
             UserDetails userDetails = userService.loadUserByUsername(email);
-            System.out.println("[FILTRO JWT] Usuario encontrado en Neon: " + userDetails.getUsername());
 
             if (jwtService.isTokenValid(token, userDetails)) {
 
-                System.out.println("[FILTRO JWT]  ¡El token es VÁLIDO! Entrando a mapear roles...");
                 // Extraemos la colección de roles empaquetados en el JWT
                 List<String> rolesClaim = jwtService.extractRoles(token);
                 System.out.println("[FILTRO JWT] Roles extraídos del Claim: " + rolesClaim);
@@ -93,9 +91,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Establecemos la sesión en el contexto para que @AuthenticationPrincipal funcione
                 SecurityContextHolder.getContext().setAuthentication(authToken);
                 System.out.println("[FILTRO JWT] 🛡️ Usuario autenticado con éxito en el contexto de Spring.");
-            }
+
+                filterChain.doFilter(request, response);
+                return;
+           } else {
+                System.out.println("[FILTRO JWT] ❌ Token inválido o expirado.");
+           }
         }
-        System.out.println("[FILTRO JWT] ❌ El token fue RECHAZADO por jwtService.isTokenValid()");
+        // ✅ Si llega aquí, es que no había token o no era válido, dejamos que la seguridad de Spring gestione si la ruta es pública o no.
         filterChain.doFilter(request, response);
     }
 }
