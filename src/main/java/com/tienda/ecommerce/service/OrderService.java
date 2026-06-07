@@ -164,4 +164,15 @@ public class OrderService {
                 itemsDto
         );
     }
+
+    /**
+     * Recupera un pedido específico por su ID único.
+     */
+    public OrderResponseDto getOrderById(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + id));
+
+        List<OrderItem> details = orderItemRepository.findByOrder(order);
+        return mapToResponseDto(order, details);
+    }
 }

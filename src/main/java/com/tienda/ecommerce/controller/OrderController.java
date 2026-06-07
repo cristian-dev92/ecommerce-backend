@@ -20,6 +20,9 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private com.tienda.ecommerce.service.PdfService pdfService;
+
     /**
      * Endpoint para procesar el Checkout desde Angular.
      * Recibe únicamente los IDs de los productos y sus cantidades por seguridad.
@@ -52,4 +55,49 @@ public class OrderController {
         List<OrderResponseDto> userOrders = orderService.getOrdersByUser(user);
         return ResponseEntity.ok(userOrders);
     }
+    /**
+     * Endpoint para descargar la factura en PDF de un pedido.
+     * Genera el PDF al vuelo combinando Thymeleaf e iText.
+     */
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<?> downloadInvoice(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        try {
+            // 1. Buscamos el pedido mapeado a tu Record
+            OrderResponseDto order = orderService.getOrderById(id);
+
+            // 2. 🛡️ Validación de seguridad:
+            // Buscamos si el pedido que intentan descargar pertenece a la ID del usuario del JWT
+            // Nota: Como tu Record no expone directamente el ID del usuario, usamos el service o la entidad si fuera necesario.
+            // Si el método getOrdersByUser de tu service ya filtra, podemos validar contra el contexto del usuario:
+            List<OrderResponseDto> userOrders = orderService.getOrdersByUser(user);
+            boolean belongsToUser = userOrders.stream().anyMatch(o -> o.id().equals(id));
+
+            if (!belongsToUser) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("error", "No tienes permiso para descargar esta factura."));
+            }
+
+            // 3. Empaquetamos los datos para el motor de plantillas
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("order", order);
+            data.put("user", user);
+
+            // 4. Compilamos el HTML en un buffer de bytes de PDF
+            byte[] pdfBytes = pdfService.generatePdfFromHtml("invoice-template", data);
+
+            // 5. Encapsulamos la respuesta binaria para forzar la descarga en Angular
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "factura-" + order.number() + ".pdf");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
 }
