@@ -115,7 +115,12 @@ public class UserService implements UserDetailsService {
                 user.getSurname(),
                 user.getEmail(),
                 user.getAvatarUrl(),
-                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet())
+                user.getRoles().stream().map(Enum::name).collect(Collectors.toSet()),
+                user.getAddress(),
+                user.getCity(),
+                user.getPostalCode(),
+                user.getProvince(),
+                user.getCountry()
         );
     }
 }

@@ -8,5 +8,10 @@ public record UserDto(
         String surname,
         String email,
         String avatarUrl,
-        Set<String> roles
+        Set<String> roles,
+        String address,
+        String city,
+        String postalCode,
+        String province,
+        String country
 ) {}
