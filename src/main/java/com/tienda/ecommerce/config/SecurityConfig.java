@@ -67,13 +67,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Productos públicos (cualquiera puede ver el catálogo)
-                        .requestMatchers(HttpMethod.GET, "/api/products/search", "/api/products/search/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/brands", "/api/products/brands/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/offers", "/api/products/offers/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
-                        // El catálogo raíz y las fichas de producto (/api/products/1) al final de la sección pública
-                        .requestMatchers(HttpMethod.GET, "/api/products", "/api/products/*").permitAll()
+                        // Permitir el endpoint de errores nativo de Spring
+                        .requestMatchers("/error", "/error/**").permitAll()
 
                         // Panel de usuario (subir avatar, ver perfil, etc.) requieren login
                         .requestMatchers(HttpMethod.POST, "/api/users/upload-avatar").authenticated()
