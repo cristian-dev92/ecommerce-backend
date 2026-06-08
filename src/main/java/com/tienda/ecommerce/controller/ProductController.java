@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -66,7 +65,7 @@ public class ProductController {
             Pageable pageable
     ) {
         Page<ProductHomeDto> result = productService.searchAndFilter(query, category, brands, maxPrice, pageable);
-        return ResponseEntity.ok(productService.searchAndFilter(query, category, brands, maxPrice, pageable));
+        return ResponseEntity.ok(result);
     }
 
     /**
