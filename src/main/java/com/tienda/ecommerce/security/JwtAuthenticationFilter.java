@@ -52,53 +52,49 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         System.out.println("[FILTRO JWT] Cabecera recibida: " + authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
-        String token = authHeader.substring(7);
-        String email = jwtService.extractEmail(token);
-        System.out.println("[FILTRO JWT] Email extraído del token: " + email);
+            String token = authHeader.substring(7);
+            String email = jwtService.extractEmail(token);
+            System.out.println("[FILTRO JWT] Email extraído del token: " + email);
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // Buscamos en Neon usando la infraestructura de Spring Security implementada en UserService
-            UserDetails userDetails = userService.loadUserByUsername(email);
+                // Buscamos en Neon usando la infraestructura de Spring Security implementada en UserService
+                UserDetails userDetails = userService.loadUserByUsername(email);
 
-            if (jwtService.isTokenValid(token, userDetails)) {
+                if (jwtService.isTokenValid(token, userDetails)) {
 
-                // Extraemos la colección de roles empaquetados en el JWT
-                List<String> rolesClaim = jwtService.extractRoles(token);
-                System.out.println("[FILTRO JWT] Roles extraídos del Claim: " + rolesClaim);
-                Collection<? extends GrantedAuthority> authorities;
+                    // Extraemos la colección de roles empaquetados en el JWT
+                    List<String> rolesClaim = jwtService.extractRoles(token);
+                    System.out.println("[FILTRO JWT] Roles extraídos del Claim: " + rolesClaim);
+                    Collection<? extends GrantedAuthority> authorities;
 
-                if (rolesClaim != null && !rolesClaim.isEmpty()) {
-                    authorities = rolesClaim.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toList());
+                    if (rolesClaim != null && !rolesClaim.isEmpty()) {
+                        authorities = rolesClaim.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList());
+                    } else {
+                        authorities = userDetails.getAuthorities();
+                    }
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            authorities
+                    );
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // Establecemos la sesión en el contexto para que @AuthenticationPrincipal funcione
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("[FILTRO JWT] 🛡️ Usuario autenticado con éxito en el contexto de Spring.");
+
                 } else {
-                    authorities = userDetails.getAuthorities();
+                    System.out.println("[FILTRO JWT] ❌ Token inválido o expirado.");
                 }
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        authorities
-                );
-
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Establecemos la sesión en el contexto para que @AuthenticationPrincipal funcione
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                System.out.println("[FILTRO JWT] 🛡️ Usuario autenticado con éxito en el contexto de Spring.");
-
-                filterChain.doFilter(request, response);
-                return;
-           } else {
-                System.out.println("[FILTRO JWT] ❌ Token inválido o expirado.");
-           }
+            }
         }
-        // ✅ Si llega aquí, es que no había token o no era válido, dejamos que la seguridad de Spring gestione si la ruta es pública o no.
-        filterChain.doFilter(request, response);
-    }
+    // ✅ Si llega aquí, es que no había token o no era válido, dejamos que la seguridad de Spring gestione si la ruta es pública o no.
+        filterChain.doFilter(request,response);
+   }
 }
