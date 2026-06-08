@@ -16,7 +16,7 @@ public interface ProductService {
     // Métodos públicos para la tienda en Angular (Usa DTOs protegidos y ligeros)
     Page<ProductHomeDto> findAllVisible(Pageable pageable);
     Page<ProductHomeDto> findByCategory(String category, Pageable pageable);
-    List<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice);
+    Page<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice, Pageable pageable);
     List<ProductHomeDto> getActiveOffers();
     ProductDetailDto findDtoById(Long id);
 

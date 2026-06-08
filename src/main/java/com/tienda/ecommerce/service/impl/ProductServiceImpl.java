@@ -12,6 +12,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.*;
+import org.springframework.data.domain.PageImpl;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -28,6 +32,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private Cloudinary cloudinary;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public Page<ProductHomeDto> findAllVisible(Pageable pageable) {
@@ -53,37 +60,84 @@ public class ProductServiceImpl implements ProductService {
      * Ideal para la barra lateral de filtros en Angular (Marcas, Categorías, Rango de Precios).
      */
     @Override
-    public List<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice) {
-        List<Product> products;
+    public Page<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice, Pageable pageable) {
+    CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
-        if (query != null && !query.trim().isEmpty()) {
-            products = productRepository.searchPublicCatalog(query);
-        } else if (category != null && !category.trim().isEmpty()) {
-            products = productRepository.findByCategoryAndVisibleTrue(category, Pageable.unpaged()).getContent();
-        } else {
-            products = productRepository.findByVisibleTrue(Pageable.unpaged()).getContent();
-        }
+    // 1. Consulta para obtener los productos
+    CriteriaQuery<Product> cq = cb.createQuery(Product.class);
+    Root<Product> root = cq.from(Product.class);
+    List<Predicate> predicates = new ArrayList<>();
 
-        products = new ArrayList<>(products);
+    // REGLA FIJA: Solo productos visibles en la tienda
+    predicates.add(cb.isTrue(root.get("visible")));
 
-        if (brands != null && !brands.isEmpty()) {
-            products = products.stream()
-                    .filter(p -> p.getBrand() != null && brands.stream().anyMatch(b -> p.getBrand().equalsIgnoreCase(b)))
-                    .collect(Collectors.toList());
-        }
+    // Filtro 1: Query global (Nombre o descripción)
+    if (query != null && !query.trim().isEmpty()) {
+        String match = "%" + query.trim().toLowerCase() + "%";
+        Predicate nameLike = cb.like(cb.lower(root.get("name")), match);
+        Predicate descLike = cb.like(cb.lower(root.get("description")), match);
+        predicates.add(cb.or(nameLike, descLike));
+    }
 
-        if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) > 0) {
-            products = products.stream()
-                    .filter(p -> p.getFinalPrice().compareTo(maxPrice) <= 0)
-                    .collect(Collectors.toList());
-        }
+    // Filtro 2: Categoría exacta
+    if (category != null && !category.trim().isEmpty()) {
+        predicates.add(cb.equal(root.get("category"), category));
+    }
 
-        // Convertimos la lista filtrada de entidades a DTOs para Angular
-        return products.stream()
-                .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()))
-                .collect(Collectors.toList());
+    // Filtro 3: Marcas EXACTAS (Aquí matamos el error de LG que mezcla marcas)
+    if (brands != null && !brands.isEmpty()) {
+        Expression<String> brandExpression = root.get("brand");
+        predicates.add(brandExpression.in(brands));
+    }
 
+    // Filtro 4: Precio Máximo aplicando el precio final calculado
+    if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) > 0) {
+        predicates.add(cb.lessThanOrEqualTo(root.get("finalPrice"), maxPrice));
+    }
+
+    cq.where(predicates.toArray(new Predicate[0]));
+
+    // 2. Ejecutar la query con los límites de la paginación (offset y limit)
+    List<Product> resultProducts = entityManager.createQuery(cq)
+            .setFirstResult((int) pageable.getOffset())
+            .setMaxResults(pageable.getPageSize())
+            .getResultList();
+
+    // 3. Consulta secundaria para contar el TOTAL de elementos (Imprescindible para que Angular calcule las páginas totales)
+    CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+    Root<Product> countRoot = countQuery.from(Product.class);
+    List<Predicate> countPredicates = new ArrayList<>();
+
+    // Clonamos los mismos filtros para el contador
+    countPredicates.add(cb.isTrue(countRoot.get("visible")));
+    if (query != null && !query.trim().isEmpty()) {
+        String match = "%" + query.trim().toLowerCase() + "%";
+        countPredicates.add(cb.or(
+                cb.like(cb.lower(countRoot.get("name")), match),
+                cb.like(cb.lower(countRoot.get("description")), match)
+        ));
+    }
+    if (category != null && !category.trim().isEmpty()) {
+        countPredicates.add(cb.equal(countRoot.get("category"), category));
+    }
+    if (brands != null && !brands.isEmpty()) {
+        countPredicates.add(countRoot.get("brand").in(brands));
+    }
+    if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) > 0) {
+        countPredicates.add(cb.lessThanOrEqualTo(countRoot.get("finalPrice"), maxPrice));
+    }
+
+    countQuery.select(cb.count(countRoot)).where(countPredicates.toArray(new Predicate[0]));
+    Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
+
+    // 4. Mapeamos la página de entidades al DTO ligero de Angular
+    List<ProductHomeDto> dtos = resultProducts.stream()
+            .map(p -> new ProductHomeDto(p.getId(), p.getName(), p.getBrand(), p.getPrice(), p.getDiscount(), p.getFinalPrice(), p.getImageUrl(), p.getStock()))
+            .toList();
+
+    return new PageImpl<>(dtos, pageable, totalElements);
 }
+
     @Override
     public ProductDetailDto findDtoById(Long id) {
         Product p = findById(id); // Reutiliza el buscador que lanza la excepción si no existe
