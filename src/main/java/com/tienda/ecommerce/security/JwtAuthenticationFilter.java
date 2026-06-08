@@ -29,9 +29,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private UserService userService; // El único y verdadero gestor de usuarios
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request,
+                                    @org.springframework.lang.NonNull HttpServletResponse response,
+                                    @org.springframework.lang.NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
         String path = request.getServletPath();
@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         System.out.println("[FILTRO JWT] Cabecera recibida: " + authHeader);
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
 
             String token = authHeader.substring(7);
             try {
@@ -95,8 +95,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 System.out.println("[FILTRO JWT] ❌ Token inválido o expirado.");
             }
+        } else {
+            // Si la cabecera es null o no empieza por Bearer, simplemente informamos en consola
+            System.out.println("[FILTRO JWT] Petición anónima o sin token válido. Continuando de forma pública...");
         }
-    // Si llega aquí, es que no había token o no era válido, dejamos que la seguridad de Spring gestione si la ruta es pública o no.
+        // Si llega aquí, es que no había token o no era válido, dejamos que la seguridad de Spring gestione si la ruta es pública o no.
         filterChain.doFilter(request,response);
    }
 }
