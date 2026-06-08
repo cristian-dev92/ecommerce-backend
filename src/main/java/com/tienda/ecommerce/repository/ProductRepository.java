@@ -39,4 +39,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "(LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             " LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<Product> searchPublicCatalog(@Param("query") String query);
+
+    // Añade este método para obtener las marcas únicas y limpias de la base de datos
+    @Query("SELECT DISTINCT TRIM(p.brand) FROM Product p WHERE p.brand IS NOT NULL AND TRIM(p.brand) != '' ORDER BY TRIM(p.brand) ASC")
+    List<String> findDistinctBrands();
 }

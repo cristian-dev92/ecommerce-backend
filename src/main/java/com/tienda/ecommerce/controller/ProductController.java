@@ -125,4 +125,10 @@ public class ProductController {
                     .body(java.util.Map.of("error", "Error al subir imagen: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/brands")
+    public ResponseEntity<List<String>> getBrands() {
+        List<String> brands = productService.getAllDistinctBrands();
+        return ResponseEntity.ok(brands);
+    }
 }

@@ -29,4 +29,7 @@ public interface ProductService {
 
     // Gestión de Imágenes con Cloudinary
     String uploadImage(MultipartFile file) throws IOException;
+
+    List<String> getAllDistinctBrands();
+
 }
