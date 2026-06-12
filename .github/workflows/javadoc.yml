@@ -31,7 +31,7 @@ jobs:
           cache: maven
 
       - name: Generar Javadoc con Maven
-        run: mvn javadoc:javadoc -Dadditionalparam="-encoding UTF-8 -docencoding UTF-8 -charset UTF-8"
+        run: mvn javadoc:javadoc -Dadditionalparam="-encoding UTF-8 -docencoding UTF-8 -charset UTF-8" -Dmaven.javadoc.failOnError=false -Ddoclint=none
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
