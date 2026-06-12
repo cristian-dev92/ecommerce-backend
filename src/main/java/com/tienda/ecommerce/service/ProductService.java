@@ -13,14 +13,18 @@ import java.util.List;
 
 public interface ProductService {
 
-    // Métodos públicos para la tienda en Angular (Usa DTOs protegidos y ligeros)
+    /**
+     * Métodos públicos para la tienda en Angular (Usa DTOs protegidos y ligeros)
+     * */
     Page<ProductHomeDto> findAllVisible(Pageable pageable);
     Page<ProductHomeDto> findByCategory(String category, Pageable pageable);
     Page<ProductHomeDto> searchAndFilter(String query, String category, List<String> brands, BigDecimal maxPrice, Pageable pageable);
     List<ProductHomeDto> getActiveOffers();
     ProductDetailDto findDtoById(Long id);
 
-    // Métodos de Administración (CRUD Completo)
+    /**
+     * Métodos de Administración (CRUD Completo)
+     */
     List<Product> findAll();
     Product findById(Long id);
     Product save(Product product);

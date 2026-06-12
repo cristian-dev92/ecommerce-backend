@@ -174,6 +174,12 @@ Esto permite que los productos y usuarios creados se mantengan almacenados de fo
 
   [X] Escalabilidad.
 
+### 📄 Documentación Técnica (Javadoc)
+
+Puedes consultar la documentación detallada de la arquitectura del backend (Controladores, Servicios y lógica de negocio) pinchando en el siguiente enlace:
+
+https://cristian-dev92.github.io/ecommerce-backend/
+
 ### 📄 Licencia
 
 Proyecto personal de aprendizaje. Uso libre para estudio y desarrollo.
