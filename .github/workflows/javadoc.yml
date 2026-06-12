@@ -40,7 +40,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # Maven por defecto guarda el Javadoc generado en esta ruta:
-          path: 'target/site/apidocs'
+          path: 'target/site'
 
       - name: Desplegar en GitHub Pages
         id: deployment
