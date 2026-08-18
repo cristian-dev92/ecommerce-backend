@@ -53,6 +53,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void updateEmail(Long userId, String newEmail) {
         User user = findById(userId);
+        // BLINDAJE DEMO: Impedir cambiar el correo a los usuarios protegidos
+        if ("admin@demo.com".equalsIgnoreCase(user.getEmail()) || "user@demo.com".equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Las cuentas de acceso rápido Demo están protegidas y no pueden modificar su email.");
+        }
         // Evitamos que cambie su correo a uno que ya use otra persona
         if (!user.getEmail().equals(newEmail) && userRepository.existsByEmail(newEmail)) {
             throw new RuntimeException("El email ya está registrado por otro usuario");
@@ -65,6 +69,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void updatePassword(Long userId, String currentPassword, String newPassword) {
         User user = findById(userId);
+        // BLINDAJE DEMO: Impedir cambiar la contraseña a los usuarios protegidos
+        if ("admin@demo.com".equalsIgnoreCase(user.getEmail()) || "user@demo.com".equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Las cuentas de acceso rápido Demo están protegidas y no pueden cambiar de contraseña.");
+        }
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new RuntimeException("La contraseña actual es incorrecta");
@@ -101,6 +109,11 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public void deleteAccount(Long userId) {
+        User user = findById(userId);
+        // BLINDAJE DEMO: Evitar que borren las cuentas demo
+        if ("admin@demo.com".equalsIgnoreCase(user.getEmail()) || "user@demo.com".equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("Las cuentas Demo no pueden ser eliminadas.");
+        }
         if (!userRepository.existsById(userId)) {
             throw new RuntimeException("Usuario no encontrado");
         }

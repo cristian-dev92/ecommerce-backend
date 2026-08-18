@@ -1,23 +1,73 @@
 package com.tienda.ecommerce.config;
 
 import com.tienda.ecommerce.model.Product;
+import com.tienda.ecommerce.model.User;
+import com.tienda.ecommerce.model.UserRole;
 import com.tienda.ecommerce.repository.ProductRepository;
+import com.tienda.ecommerce.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.Set;
 
 @Component
 public class DataLoader implements CommandLineRunner {
 
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataLoader(ProductRepository productRepository) {
+    public DataLoader(ProductRepository productRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // ========================================================
+        // 1. CARGA DE USUARIOS DE DEMO (ADMIN Y CLIENTE)
+        // ========================================================
+
+        // Admin de Demo
+        if (!userRepository.existsByEmail("admin@demo.com")) {
+            User admin = User.builder()
+                    .name("Admin")
+                    .surname("Demo")
+                    .email("admin@demo.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .roles(Set.of(UserRole.ROLE_ADMIN, UserRole.ROLE_USER))
+                    .isActive(true)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            userRepository.save(admin);
+            System.out.println("✅ Usuario Admin de Demo creado (admin@demo.com / admin123)");
+        }
+
+        // Cliente de Demo
+        if (!userRepository.existsByEmail("user@demo.com")) {
+            User user = User.builder()
+                    .name("Cliente")
+                    .surname("Demo")
+                    .email("user@demo.com")
+                    .password(passwordEncoder.encode("user123"))
+                    .roles(Set.of(UserRole.ROLE_USER))
+                    .isActive(true)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            userRepository.save(user);
+            System.out.println("✅ Usuario Cliente de Demo creado (user@demo.com / user123)");
+        }
+
+        // ========================================================
+        // 2. CARGA DE PRODUCTOS DE PRUEBA
+        // ========================================================
         if (productRepository.count() == 0) {
             System.out.println("🚀 Cargando productos de prueba con stock en Neon...");
 
